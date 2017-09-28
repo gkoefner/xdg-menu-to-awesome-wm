@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Author(s): Luke Macken <lmacken[at]redhat.com>
-#            Miroslav Lichvar <mlichvar[at]redhat.com>
-#            Edward Sheldrake <ejsheldrake[at]gmail.com>
-#	     Arnaud Valensi <arnaud.valensi[at]gmail.com>
+#			Miroslav Lichvar <mlichvar[at]redhat.com>
+#			Edward Sheldrake <ejsheldrake[at]gmail.com>
+#		 Arnaud Valensi <arnaud.valensi[at]gmail.com>
 
 import xdg.Menu, xdg.DesktopEntry, xdg.Config
 import re, sys, os
@@ -33,25 +33,30 @@ except ImportError:
 
 def icon_attr(entry):
 	if icons is False:
-		return ''
+		return None
 
 	name = entry.getIcon()
 
+	#awesome can't load ico icons, and fails to show whole submenu, containing them
+	if name.endswith(".ico"):
+		return None
+
 	if os.path.exists(name):
-		return ' icon="' + name + '"'
+		return name
 
 	# work around broken .desktop files
 	# unless the icon is a full path it should not have an extension
 	name = re.sub('\..{3,4}$', '', name)
 
-	# imlib2 cannot load svg
-	iconinfo = theme.lookup_icon(name, 22, Gtk.IconLookupFlags.NO_SVG)
-	if iconinfo:
-		iconfile = iconinfo.get_filename()
-		iconinfo.free()
-		if iconfile:
-			return ' icon="' + iconfile + '"'
-	return ''
+	for size in [32, 22, 16]:
+		# imlib2 cannot load svg
+		iconinfo = theme.lookup_icon(name, size, Gtk.IconLookupFlags.NO_SVG)
+		if iconinfo:
+			iconfile = iconinfo.get_filename()
+			#iconinfo.free()
+			if iconfile:
+				return iconfile
+	return None
 
 def escape_utf8(s):
 	return escape(s.encode('utf-8', 'xmlcharrefreplace'))
@@ -104,7 +109,8 @@ def generate_awesome_menu(entry):
 		first = entry_name(entry.DesktopEntry).replace('"', '')
 		first = first.replace('"', '\\"')
 		second = second.replace('"', '\\"')
-		submenu.append((first, second));
+		third = icon_attr(entry.DesktopEntry)
+		submenu.append((first, second, third));
 
 def generate_main_menu():
 	global submenu_list
@@ -118,10 +124,14 @@ def generate_main_menu():
 		print "local submenu%d =\n{" % i
 		j = 0
 		for entry in elem:
+			icon = ""
+			if entry[2] is not None:
+				icon = entry[2]
+				
 			if j == len(elem) - 1:
-				print "  { \"%s\", \"%s\" }" % (entry[0], entry[1])
+				print "  { \"%s\", \"%s\", \"%s\" }"  % (entry[0], entry[1], icon)
 			else:
-				print "  { \"%s\", \"%s\" }," % (entry[0], entry[1])
+				print "  { \"%s\", \"%s\", \"%s\" }," % (entry[0], entry[1], icon)
 			j += 1
 		print '}'
 		i += 1
@@ -141,6 +151,12 @@ if len(sys.argv) > 1:
 else:
 	menufile = 'applications.menu'
 
+# fix unicode issue when streaming to pipe
+if sys.stdout.encoding is None:
+	import codecs
+	writer = codecs.getwriter("utf-8")
+	sys.stdout = writer(sys.stdout)
+
 lang = os.environ.get('LANG')
 if lang:
 	xdg.Config.setLocale(lang)
@@ -149,7 +165,7 @@ if lang:
 xdg.Config.setWindowManager('GNOME')
 
 if icons:
-  theme = Gtk.IconTheme.get_default()
+	theme = Gtk.IconTheme.get_default()	 
 
 menu = xdg.Menu.parse(menufile)
 
