@@ -23,12 +23,12 @@ myawesomemenu = {
    { "quit", awesome.quit }
 }
 
--- Our generated menu is "myappmenu"
--- require("menu") add the file "menu.lua"
-require("menu")
+-- Our generated menu is returned from the lua file
+-- require("applications") add the file "applications.lua"
+local applications_menu = require("applications")
 mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
--- The next line add our menu (myappmenu)
-	        	  	    { "app", myappmenu, beautiful.awesome_icon },
+-- The next line add our menu (applications_menu)
+	        	  	    { "app", applications_menu, beautiful.awesome_icon },
                                     { "open terminal", terminal }
                                   }
                         })
