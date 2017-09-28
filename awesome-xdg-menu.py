@@ -115,7 +115,7 @@ def generate_main_menu():
 
 	i = 0
 	for elem in submenu_list:
-		print "submenu%d =\n{" % i
+		print "local submenu%d =\n{" % i
 		j = 0
 		for entry in elem:
 			if j == len(elem) - 1:
@@ -125,7 +125,7 @@ def generate_main_menu():
 			j += 1
 		print '}'
 		i += 1
-	print 'myappmenu =\n{'
+	print 'local myappmenu =\n{'
 	i = 0
 	for entry in menu_list:
 		if i == len(menu_list) - 1:
@@ -133,7 +133,8 @@ def generate_main_menu():
 		else:
 			print "  { \"%s\", submenu%d }," % (entry, i)
 		i += 1
-	print '}'
+	print "}\n"
+	print "return myappmenu"
 
 if len(sys.argv) > 1:
 	menufile = sys.argv[1] + '.menu'
